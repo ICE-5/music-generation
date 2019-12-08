@@ -22,9 +22,14 @@ def __parse_midi(data_fn):
     midi_data = converter.parse(data_fn)
     # Get melody part, compress into single voice.
     melody_stream = midi_data[5]     # For Metheny piece, Melody is Part #5.
-    melody1, melody2 = melody_stream.getElementsByClass(stream.Voice)
-    for j in melody2:
-        melody1.insert(j.offset, j)
+    print(len(midi_data))
+    try:
+        melody1, melody2 = melody_stream.getElementsByClass(stream.Voice)
+        for j in melody2:
+            melody1.insert(j.offset, j)
+    except:
+        melody1 = melody_stream.getElementsByClass(stream.Voice)
+
     melody_voice = melody1
 
     for i in melody_voice:
@@ -49,7 +54,7 @@ def __parse_midi(data_fn):
     # Full stream containing both the melody and the accompaniment. 
     # All parts are flattened. 
     full_stream = stream.Voice()
-    for i in xrange(len(comp_stream)):
+    for i in range(len(comp_stream)):
         full_stream.append(comp_stream[i])
     full_stream.append(melody_voice)
 
@@ -61,11 +66,11 @@ def __parse_midi(data_fn):
     for part in full_stream:
         curr_part = stream.Part()
         curr_part.append(part.getElementsByClass(instrument.Instrument))
-        curr_part.append(part.getElementsByClass(tempo.MetronomeMark))
         curr_part.append(part.getElementsByClass(key.KeySignature))
         curr_part.append(part.getElementsByClass(meter.TimeSignature))
         curr_part.append(part.getElementsByOffset(476, 548, 
-                                                  includeEndBoundary=True))
+                                                includeEndBoundary=True))
+        curr_part.append(part.getElementsByClass(tempo.MetronomeMark))
         cp = curr_part.flat
         solo_stream.insert(cp)
 
@@ -112,7 +117,7 @@ def __parse_midi(data_fn):
 def __get_abstract_grammars(measures, chords):
     # extract grammars
     abstract_grammars = []
-    for ix in xrange(1, len(measures)):
+    for ix in range(1, len(measures)):
         m = stream.Voice()
         for i in measures[ix]:
             m.insert(i.offset, i)

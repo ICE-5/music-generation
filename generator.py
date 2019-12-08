@@ -16,25 +16,30 @@ GPU run command:
     Note: running Keras/Theano on GPU is formally supported for only NVIDIA cards (CUDA backend).
 '''
 from __future__ import print_function
+
 import sys
+import argparse
+import os
 
-from music21 import *
 import numpy as np
-
+from music21 import *
 from grammar import *
 from preprocess import *
 from qa import *
+
 import lstm
-import vae
-import os
+
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 #----------------------------HELPER FUNCTIONS----------------------------------#
 
 ''' Helper function to sample an index from a probability array '''
 def __sample(a, temperature=1.0):
+    a += 1e-5
     a = np.log(a) / temperature
     a = np.exp(a) / np.sum(np.exp(a))
+    if len(a.shape) > 1:
+        a = np.mean(a, axis=0)
     return np.argmax(np.random.multinomial(1, a, 1))
 
 ''' Helper function to generate a predicted value from a given matrix '''
@@ -97,7 +102,7 @@ def __generate_grammar(model, corpus, abstract_grammars, values, val_indices,
 #----------------------------PUBLIC FUNCTIONS----------------------------------#
 ''' Generates musical sequence based on the given data filename and settings.
     Plays then stores (MIDI file) the generated output. '''
-def generate(data_fn, out_fn, N_epochs):
+def generate(data_fn, out_fn, N_epochs, model_choice):
     # model settings
     max_len = 20
     max_tries = 1000
@@ -113,13 +118,11 @@ def generate(data_fn, out_fn, N_epochs):
     print('total # of values:', len(values))
 
     # build model
-    choice='lstm'
-    # choice='lstm-vae'
     model = lstm.build_model(corpus=corpus, 
                                      val_indices=val_indices, 
                                      max_len=max_len,
                                      N_epochs=N_epochs,
-                                     model=choice)
+                                     model_choice=model_choice)
 
     # set up audio stream
     out_stream = stream.Stream()
@@ -179,23 +182,28 @@ def generate(data_fn, out_fn, N_epochs):
     mf.write()
     mf.close()
 
-''' Runs generate() -- generating, playing, then storing a musical sequence --
-    with the default Metheny file. '''
-def main(args):
-    try:
-        N_epochs = int(args[1])
-    except:
-        N_epochs = 128 # default
+
+def parse_arguments():
+    # Command-line flags are defined here.
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model-choice ', dest='model_choice', type=str,
+                        default='lstm', help="Model choice: lstm / bi-lstm / vae-lstm")
+    parser.add_argument('--epochs', dest='N_epochs', type=int,
+                        default=128, help="Number of epochs")
+    return parser.parse_args()
+
+
+''' If run as script, execute main '''
+if __name__ == '__main__':
+    args = parse_arguments()
+    N_epochs = args.N_epochs
+    model_choice = args.model_choice
 
     # i/o settings
-    data_fn = 'midi/' + 'original_metheny.mid' # 'And Then I Knew' by Pat Metheny 
+    # data_fn = 'midi/' + 'original_metheny.mid' # 'And Then I Knew' by Pat Metheny 
+    data_fn = 'midi/' + 'piano.mid'
     out_fn = 'midi/' 'deepjazz_on_metheny...' + str(N_epochs)
     if (N_epochs == 1): out_fn += '_epoch.midi'
     else:               out_fn += '_epochs.midi'
 
-    generate(data_fn, out_fn, N_epochs)
-
-''' If run as script, execute main '''
-if __name__ == '__main__':
-    import sys
-    main(sys.argv)
+    generate(data_fn, out_fn, N_epochs, model_choice=model_choice)
