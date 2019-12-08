@@ -1,7 +1,8 @@
-import pickle
-from music21 import chord, converter, instrument, midi, note, meter
-import numpy as np
+from music21 import *
+from collections import defaultdict
 import sys
+import numpy as np
+import pickle
 
 
 def get_midi(midi_file_path):
@@ -25,6 +26,7 @@ def get_pitches(midi, part_id=None):
     """
     try: # file has instrument parts
         s2 = instrument.partitionByInstrument(midi)
+        print(len(s2))
         if part_id is not None:
             notes = s2.parts[part_id].recurse()
             pitches = [c.pitches for c in notes]
@@ -53,19 +55,22 @@ def get_dynamics(midi):
 
 
 # Returns <filename> as a list of (pitch, relative offset, duration) tuples
-def read_file_as_pitch_offset_duration(filename):
+def read_file_as_pitch_offset_duration(filename, dechord=True):
     score = midi.translate.midiFilePathToStream(filename, quarterLengthDivisors=(32,))
     events = score.flat
     processed = []
     print("processing ", filename, "...")
-    for i in range(len(events)):  # flat converts relative offsets into absolute offsets!
+    for i in range(len(events)):
         elt = events[i]
         if isinstance(elt, chord.Chord):
             offset = elt.offset
             duration = elt.quarterLength
-            for n in elt:
-                processed.append((n.pitch.midi, offset, duration))
-        if isinstance(elt, note.Rest) or isinstance(elt, note.Note):  # for now, ignoring meter.TimeSignature, tempo.MetronomeMark
+            if dechord==True:
+                processed.append((elt[0].pitch.ps, offset, duration))
+            else:
+                for n in elt:
+                    processed.append((n.pitch.ps, offset, duration))
+        if isinstance(elt, note.Rest) or isinstance(elt, note.Note):
             pitch = 0 if isinstance(elt, note.Rest) else elt.pitch.midi
             offset = elt.offset
             duration = elt.quarterLength
@@ -76,42 +81,33 @@ def read_file_as_pitch_offset_duration(filename):
         curr_abs_offset = processed[i][1]
         processed[i] = (processed[i][0], curr_abs_offset - prev_abs_offset, processed[i][2])
         prev_abs_offset = curr_abs_offset
-    return processed
+    return np.array(processed)
 
 
 def output_pitch_offset_duration_as_midi_file(arr, output_file):
     input_len = arr.shape[0]
-    pitch, offset, duration = arr[:,0], arr[:,1], arr[:,2]
-    pitch = pitch.astype(np.int32).tolist()  # must convert to native int type (see final case in Chord's _add_core_or_init)
-    print(pitch[:10], offset[:10], duration[:10])
-
-    # key idea: for every offset, maintain a dict that maps: duration --> list of pitches
-    # each element of the map is a chord (or note, if only 1)
-    i = 0
-    total_offset = 0  # TODO: need to update this!!!!
-    output_notes = []
-    while i < input_len:
-        total_offset += offset[i]
-        dd = defaultdict(list)
-        if pitch[i] != 0:
-            dd[duration[i]].append(pitch[i])
-        while i+1 < input_len and offset[i+1] == 0:  # increment i and add next values to the map
-            i += 1
-            if pitch[i] != 0:
-                dd[duration[i]].append(pitch[i])
-        for d, pitches in dd.items():
-            print("(d, pitches) = ", d, ", ", pitches)
-            # might be able to express notes as single-element chords...
-            item = note.Note(pitches[0]) if len(pitches) == 1 else chord.Chord(pitches)
-            item.offset = total_offset
-            item.duration.quarterLength = d
-            output_notes.append(item)
-        i += 1
-
-    midi_stream = stream.Stream(output_notes)
+    pitches, offsets, durations = arr[:,0], arr[:,1], arr[:,2]
+    # pitches = pitches.astype(np.int32).tolist()
+    total_offset = 0
+    midi_stream = stream.Stream()
+    for idx in range(arr.shape[0]):
+        if pitches[idx]!=0.:
+            tmp_note = note.Note()
+            tmp_note.pitch.ps = pitches[idx]
+            tmp_note.duration.quarterLength = durations[idx]
+            total_offset += offsets[idx]
+            tmp_note.offset = total_offset
+            
+            # if tmp_note.pitch.ps!=44.:
+            #     midi_stream.insert(tmp_note)
+            midi_stream.insert(tmp_note)
+        else:
+            total_offset += offsets[idx]
+                   
     midi_stream.write('midi', fp=output_file)
 
 
 if __name__ == "__main__":
-    x = np.array(read_file_as_pitch_offset_duration(sys.argv[1]))
+    x = read_file_as_pitch_offset_duration(sys.argv[1], dechord=False)
     print(x.shape)
+    output_pitch_offset_duration_as_midi_file(x, "midi/test.mid")
