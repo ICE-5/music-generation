@@ -2,8 +2,15 @@
 
 deepjazz was created by Ji-Sung Kim in the spring of 2016.
 
-Original Author:    Ji-Sung Kim
+Original author:    Ji-Sung Kim
 Date of creation:   April 1, 2016
+Code license:       Apache License 2.0
+
+beyond deepjazz with implementation of VAE-LSTM, BI-LSTM was created
+by Yuning Wu, Rohith Krishnan Pillai, Yijie Sun in the winter of 2019
+
+Adaptation Author:  Yuning Wu, Rohith Krishnan Pillai, Yijie Sun
+Date of adaptation: December 5, 2019
 Code license:       Apache License 2.0
 
 ###----------------------------------------------------------------###

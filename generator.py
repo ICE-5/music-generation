@@ -1,7 +1,14 @@
 '''
+Code reference: DeepJazz (Baseline)
 Author:     Ji-Sung Kim
 Project:    deepjazz
 Purpose:    Generate jazz using a deep learning model (lstm in deepjazz).
+
+VAE-LSTM by Yuning Wu
+
+BI-LSTM by Rohith Pillai
+
+Parameter tuning and interface implementation
 
 Some code adapted from Evan Chow's jazzml, https://github.com/evancchow/jazzml 
 with express permission.
@@ -23,9 +30,9 @@ import os
 
 import numpy as np
 from music21 import *
-from grammar import *
-from preprocess import *
-from qa import *
+from utils.grammar import *
+from utils.preprocess import *
+from utils.qa import *
 
 import lstm
 
@@ -200,9 +207,8 @@ if __name__ == '__main__':
     model_choice = args.model_choice
 
     # i/o settings
-    # data_fn = 'midi/' + 'original_metheny.mid' # 'And Then I Knew' by Pat Metheny 
-    data_fn = 'midi/' + 'piano.mid'
-    out_fn = 'midi/' 'deepjazz_on_metheny...' + str(N_epochs)
+    data_fn = 'data/' + 'original_metheny.mid' 
+    out_fn = 'result/' + str(model_choice) + str(N_epochs)
     if (N_epochs == 1): out_fn += '_epoch.midi'
     else:               out_fn += '_epochs.midi'
 
