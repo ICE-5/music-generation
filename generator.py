@@ -208,7 +208,7 @@ if __name__ == '__main__':
 
     # i/o settings
     data_fn = 'data/' + 'original_metheny.mid' 
-    out_fn = 'result/' + str(model_choice) + str(N_epochs)
+    out_fn = 'result/' + str(model_choice) + '_' +  str(N_epochs)
     if (N_epochs == 1): out_fn += '_epoch.midi'
     else:               out_fn += '_epochs.midi'
 
