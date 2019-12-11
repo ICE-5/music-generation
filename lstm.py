@@ -70,7 +70,7 @@ def build_model(corpus, val_indices, max_len, N_epochs=128, model_choice=None):
         model, _, _ = vae_lstm(input_dim=N_values, 
                                timesteps=max_len, 
                                batch_size=N_epochs,
-                               intermediate_dim=128, 
+                               middle_dim=128,
                                latent_dim=64, 
                                epsilon_std=0.5) 
         plot_model(model, to_file='vae-lstm.png')
@@ -155,23 +155,14 @@ def bi_lstm(input_dim, timesteps):
     
 
 
-def vae_lstm(input_dim, timesteps, batch_size, intermediate_dim, latent_dim, epsilon_std=1.):
+def vae_lstm(input_dim, timesteps, batch_size, middle_dim, latent_dim, epsilon_std=1.):
 
     """
-    Creates an LSTM Variational Autoencoder (VAE). Returns VAE, Encoder, Generator. 
-    Arguments
-        input_dim: int.
-        timesteps: int, input timestep dimension.
-        batch_size: int.
-        intermediate_dim: int, output shape of LSTM. 
-        latent_dim: int, latent z-layer shape. 
-        epsilon_std: float, z-layer sigma.
     References
         - [Keras LSTM VAE] https://github.com/twairball/keras_lstm_vae/blob/master/lstm_vae/vae.py
         - [Building Autoencoders in Keras](https://blog.keras.io/building-autoencoders-in-keras.html)
         - [Generating sentences from a continuous space](https://arxiv.org/abs/1511.06349)
     """
-
     def sampling(args):
         z_mean, z_sigma = args
         epsilon = K.random_normal(shape=(timesteps, latent_dim, ), mean=0., stddev=epsilon_std)
@@ -181,50 +172,47 @@ def vae_lstm(input_dim, timesteps, batch_size, intermediate_dim, latent_dim, eps
         print('timesteps', timesteps)
         return z
     
-    def vae_loss(x, x_decoded_mean):
-        xent_loss = objectives.mse(x, x_decoded_mean)
+    def vae_loss(x, x_decoded):
+        x_loss = objectives.mse(x, x_decoded)
         kl_loss = - 0.5 * K.mean(1 + z_sigma - K.square(z_mean) - K.exp(z_sigma), axis=-1)
-        loss = xent_loss + kl_loss
-        return loss
+        return x_loss + kl_loss
 
+    # encoding
     x = Input(shape=(timesteps, input_dim, ))
+    h = LSTM(middle_dim, return_sequences=True)(x)
 
-    # LSTM encoding
-    h = LSTM(intermediate_dim, return_sequences=True)(x)
-
-    # VAE z layer
+    # z
     z_mean = Dense(latent_dim)(h)
     z_sigma = Dense(latent_dim)(h)
     print('This is mu:', K.int_shape(z_mean), 'latent_dim', latent_dim)
 
     z = Lambda(sampling, output_shape=(latent_dim, ))([z_mean, z_sigma])
     
-    # decoding LSTM layer
-    decoder_h = LSTM(intermediate_dim, return_sequences=True)
+    # decoding
+    decoder_h = LSTM(middle_dim, return_sequences=True)
     decoder_mean = LSTM(input_dim, return_sequences=True)
 
     h_decoded = RepeatVector(timesteps)(z)
     h_decoded = decoder_h(h_decoded)
 
-    # decoded layer
-    x_decoded_mean = decoder_mean(h_decoded)
-    
-    # end-to-end autoencoder
-    vae = Model(x, x_decoded_mean)
-
-    # encoder, from inputs to latent space
+    # encoder
+    x_decoded = decoder_mean(h_decoded)  
     encoder = Model(x, z_mean)
     encoder.summary()
 
-    # generator, from latent space to reconstructed inputs
+    # decoder
     decoder_input = Input(shape=(latent_dim, ))
 
     _h_decoded = RepeatVector(timesteps)(decoder_input)
     _h_decoded = decoder_h(_h_decoded)
-    _x_decoded_mean = decoder_mean(_h_decoded)
-    generator = Model(decoder_input, _x_decoded_mean)
-    generator.summary()
+    _x_decoded = decoder_mean(_h_decoded)
+
+    decoder = Model(decoder_input, _x_decoded)
+    decoder.summary()
+
+    vae = Model(x, x_decoded)
 
     vae.compile(optimizer='adam', loss=vae_loss)
+    # vae.compile(optimizer='rmsprop', loss=vae_loss)
     
-    return vae, encoder, generator
+    return vae, encoder, decoder
