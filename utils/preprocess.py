@@ -1,10 +1,26 @@
 '''
+VAE-LSTM by Yuning Wu
+
+BI-LSTM by Rohith Pillai
+
+Parameter tuning and interface implementation
+
+Code reference: DeepJazz (Baseline)
 Author:     Ji-Sung Kim
 Project:    deepjazz
-Purpose:    Parse, cleanup and process data.
+Purpose:    Generate jazz using a deep learning model (lstm in deepjazz).
 
-Code adapted from Evan Chow's jazzml, https://github.com/evancchow/jazzml with
-express permission.
+Some code adapted from Evan Chow's jazzml, https://github.com/evancchow/jazzml 
+with express permission.
+
+Code was built while significantly referencing public examples from the
+Keras documentation on GitHub:
+https://github.com/fchollet/keras/blob/master/examples/lstm_text_generation.py
+
+GPU run command:
+    THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32 python generator.py [# of epochs]
+
+    Note: running Keras/Theano on GPU is formally supported for only NVIDIA cards (CUDA backend).
 '''
 
 from __future__ import print_function

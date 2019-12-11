@@ -1,10 +1,26 @@
 '''
-Author:     Ji-Sung Kim, Evan Chow
-Project:    deepjazz
-Purpose:    Provide pruning and cleanup functions.
+VAE-LSTM by Yuning Wu
 
-Code adapted from Evan Chow's jazzml, https://github.com/evancchow/jazzml 
+BI-LSTM by Rohith Pillai
+
+Parameter tuning and interface implementation
+
+Code reference: DeepJazz (Baseline)
+Author:     Ji-Sung Kim
+Project:    deepjazz
+Purpose:    Generate jazz using a deep learning model (lstm in deepjazz).
+
+Some code adapted from Evan Chow's jazzml, https://github.com/evancchow/jazzml 
 with express permission.
+
+Code was built while significantly referencing public examples from the
+Keras documentation on GitHub:
+https://github.com/fchollet/keras/blob/master/examples/lstm_text_generation.py
+
+GPU run command:
+    THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32 python generator.py [# of epochs]
+
+    Note: running Keras/Theano on GPU is formally supported for only NVIDIA cards (CUDA backend).
 '''
 from itertools import izip_longest
 import random

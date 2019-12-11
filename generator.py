@@ -1,14 +1,14 @@
 '''
-Code reference: DeepJazz (Baseline)
-Author:     Ji-Sung Kim
-Project:    deepjazz
-Purpose:    Generate jazz using a deep learning model (lstm in deepjazz).
-
 VAE-LSTM by Yuning Wu
 
 BI-LSTM by Rohith Pillai
 
 Parameter tuning and interface implementation
+
+Code reference: DeepJazz (Baseline)
+Author:     Ji-Sung Kim
+Project:    deepjazz
+Purpose:    Generate jazz using a deep learning model (lstm in deepjazz).
 
 Some code adapted from Evan Chow's jazzml, https://github.com/evancchow/jazzml 
 with express permission.
@@ -113,7 +113,7 @@ def generate(data_fn, out_fn, N_epochs, model_choice):
     # model settings
     max_len = 20
     max_tries = 1000
-    diversity = 0.5
+    diversity = 0.5 # 0.5
 
     # musical settings
     bpm = 130

@@ -1,3 +1,27 @@
+'''
+VAE-LSTM by Yuning Wu
+
+BI-LSTM by Rohith Pillai
+
+Parameter tuning and interface implementation
+
+Code reference: DeepJazz (Baseline)
+Author:     Ji-Sung Kim
+Project:    deepjazz
+Purpose:    Generate jazz using a deep learning model (lstm in deepjazz).
+
+Some code adapted from Evan Chow's jazzml, https://github.com/evancchow/jazzml 
+with express permission.
+
+Code was built while significantly referencing public examples from the
+Keras documentation on GitHub:
+https://github.com/fchollet/keras/blob/master/examples/lstm_text_generation.py
+
+GPU run command:
+    THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32 python generator.py [# of epochs]
+
+    Note: running Keras/Theano on GPU is formally supported for only NVIDIA cards (CUDA backend).
+'''
 from __future__ import print_function
 
 import keras
@@ -6,8 +30,11 @@ from keras.models import Sequential, Model
 from keras.layers import Input, LSTM, RepeatVector, Bidirectional
 from keras.layers.core import Dense, Activation, Dropout, Flatten, Lambda
 from keras.optimizers import SGD, RMSprop, Adam
+from keras.regularizers import l1, l2
 from keras import objectives
+from keras.utils import plot_model
 import numpy as np
+import matplotlib.pyplot as plt
 
 ''' Build a 2-layer LSTM from a training corpus '''
 def build_model(corpus, val_indices, max_len, N_epochs=128, model_choice=None):
@@ -36,7 +63,8 @@ def build_model(corpus, val_indices, max_len, N_epochs=128, model_choice=None):
         # build a 2 stacked LSTM
         # default
         model = lstm(input_dim=N_values, timesteps=max_len)
-        model.fit(X, y, batch_size=128, epochs=N_epochs)
+        plot_model(model, to_file='lstm.png')
+        history = model.fit(X, y, batch_size=128, epochs=N_epochs)
     
     elif model_choice=='vae-lstm':
         model, _, _ = vae_lstm(input_dim=N_values, 
@@ -45,14 +73,34 @@ def build_model(corpus, val_indices, max_len, N_epochs=128, model_choice=None):
                                intermediate_dim=128, 
                                latent_dim=64, 
                                epsilon_std=0.5) 
-        model.fit(X, X, batch_size=128, epochs=N_epochs)
+        plot_model(model, to_file='vae-lstm.png')
+        history = model.fit(X, X, batch_size=128, epochs=N_epochs)
 
     elif model_choice=='bi-lstm':
         model = bi_lstm(input_dim=N_values, timesteps=max_len)
-        model.fit(X, y, batch_size=128, epochs=N_epochs)
+        plot_model(model, to_file='bi-lstm.png')
+        history = model.fit(X, y, batch_size=128, epochs=N_epochs)
 
     else:
         raise Exception
+
+    # Plot training & validation accuracy values
+    # plt.plot(history.history['acc'])
+    # plt.plot(history.history['val_acc'])
+    # plt.title('Model accuracy')
+    # plt.ylabel('Accuracy')
+    # plt.xlabel('Epoch')
+    # plt.legend(['Train', 'Test'], loc='upper left')
+    # plt.show()
+
+    # Plot training & validation loss values
+    # plt.plot(history.history['loss'])
+    # plt.plot(history.history['val_loss'])
+    # plt.title('Model loss')
+    # plt.ylabel('Loss')
+    # plt.xlabel('Epoch')
+    # plt.legend(['Train', 'Test'], loc='upper left')
+    # plt.show()
 
     return model
 
@@ -98,10 +146,10 @@ def bi_lstm(input_dim, timesteps):
     model.add(Bidirectional(LSTM(128, return_sequences=False)))
     model.add(Dropout(0.2))
 
-    model.add(Dense(input_dim))
+    model.add(Dense(input_dim, kernel_regularizer=l1(1e-3)))
     model.add(Activation('softmax'))
 
-    model.compile(loss='categorical_crossentropy', optimizer='adam')
+    model.compile(loss='categorical_crossentropy', optimizer='adam', )
     # model.fit(X, y, batch_size=128, nb_epoch=N_epochs)
     return model
     

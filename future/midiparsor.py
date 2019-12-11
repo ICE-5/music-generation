@@ -110,4 +110,4 @@ def output_pitch_offset_duration_as_midi_file(arr, output_file):
 if __name__ == "__main__":
     x = read_file_as_pitch_offset_duration(sys.argv[1], dechord=False)
     print(x.shape)
-    output_pitch_offset_duration_as_midi_file(x, "midi/test.mid")
+    output_pitch_offset_duration_as_midi_file(x, "test.mid")
