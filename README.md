@@ -33,6 +33,12 @@ https://magenta.tensorflow.org/performance-rnn
   + Temperature and randomness
   + Volumes
 
+## Additional Dataset
+
+To download the larger Yamaha e-Piano Competition Dataset, from:
++ Malik, I., & Ek, C. H. (2017). Neural translation of musical style. arXiv preprint arXiv:1708.03535.
+Use this link: http://imanmalik.com/assets/dataset/TPD.zip
+
 ## Usage
 
 Use `generator.py` for public interface
