@@ -61,6 +61,12 @@ E.g. use `bi-lstm` model and train 128 epochs
 python generator.py --model-choice "bi-lstm" --epochs 128
 ```
 
+E.g. use `bi-lstm` model and train 2 epochs, with diversity 0.7
+
+```bash
+python generator.py --model-choice "bi-lstm" --epochs 2 --diversity 0.7
+```
+
 ## Requirement
 
 ```bash
